@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graph Visualizer</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+ body {font-family: sans-serif; margin: 0; padding: 0;}
+ #controls {padding: 1em; background: #f0f0f0;}
+ #graph {border: 1px solid #ccc; width: 100%; height: 80vh;}
+ textarea {width: 100%; height: 8em;}
+ .node circle {fill: #69b3a2; stroke: #333; stroke-width: 1.5px;}
+ .node text {pointer-events: none; font-size: 12px; text-anchor: middle; fill: #000;}
+ .link line {stroke: #999; stroke-width: 1.5px;}
+ .link text {font-size: 10px; fill: #555;}
+</style>
+</head>
+<body>
+<div id="controls">
+ <textarea id="graph-input" placeholder="Enter graph description"></textarea>
+ <button id="draw-btn">Draw Graph</button>
+</div>
+<svg id="graph"></svg>
+<script>
+const svg = d3.select('#graph');
+const width = parseInt(svg.style('width')) || 800;
+const height = parseInt(svg.style('height')) || 600;
+svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+function parseInput(text) {
+ const lines = text.trim().split(/\n+/).map(l => l.trim()).filter(l => l.length);
+ if (!lines.length) return {nodes: [], links: []};
+ const N = parseInt(lines[0], 10);
+ const edges = [];
+ for (let i = 1; i <= N-1 && i < lines.length; i++) {
+   const parts = lines[i].split(/\s+/);
+   const src = parseInt(parts[0], 10);
+   const dst = parseInt(parts[1], 10);
+   const label = parts.slice(2).join(' ');
+   edges.push({source: src, target: dst, label: label || null});
+ }
+ let nodeLabels = [];
+ if (lines.length > N) {
+   const start = N; // after first N lines (1 for N, N-1 for edges)
+   for (let i = start; i < start + N && i < lines.length; i++) {
+     nodeLabels.push(lines[i]);
+   }
+ } else {
+   nodeLabels = Array.from({length: N}, (_, i) => String(i+1));
+ }
+ const nodes = nodeLabels.map((label, i) => ({id: i+1, label}));
+ return {nodes, links: edges};
+}
+
+function drawGraph(data) {
+ svg.selectAll('*').remove();
+ const linkGroup = svg.append('g').attr('class', 'links');
+ const nodeGroup = svg.append('g').attr('class', 'nodes');
+
+ const simulation = d3.forceSimulation(data.nodes)
+   .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
+   .force('charge', d3.forceManyBody().strength(-400))
+   .force('center', d3.forceCenter(width / 2, height / 2));
+
+ const link = linkGroup.selectAll('g').data(data.links).enter()
+   .append('g').attr('class', 'link');
+ link.append('line');
+ link.append('text').text(d => d.label || '');
+
+ const node = nodeGroup.selectAll('g').data(data.nodes).enter()
+   .append('g').attr('class', 'node').call(d3.drag()
+     .on('start', dragstarted)
+     .on('drag', dragged)
+     .on('end', dragended));
+ node.append('circle').attr('r', 15);
+ node.append('text').attr('dy', 4).text(d => d.label);
+
+ simulation.on('tick', () => {
+   link.select('line')
+     .attr('x1', d => d.source.x)
+     .attr('y1', d => d.source.y)
+     .attr('x2', d => d.target.x)
+     .attr('y2', d => d.target.y);
+   link.select('text')
+     .attr('x', d => (d.source.x + d.target.x) / 2)
+     .attr('y', d => (d.source.y + d.target.y) / 2);
+
+   node.attr('transform', d => `translate(${d.x},${d.y})`);
+ });
+
+ function dragstarted(event, d) {
+   if (!event.active) simulation.alphaTarget(0.3).restart();
+   d.fx = d.x;
+   d.fy = d.y;
+ }
+
+ function dragged(event, d) {
+   d.fx = event.x;
+   d.fy = event.y;
+ }
+
+ function dragended(event, d) {
+   if (!event.active) simulation.alphaTarget(0);
+   d.fx = null;
+   d.fy = null;
+ }
+}
+
+document.getElementById('draw-btn').addEventListener('click', () => {
+ const text = document.getElementById('graph-input').value;
+ const data = parseInput(text);
+ drawGraph(data);
+});
+</script>
+</body>
+</html>
