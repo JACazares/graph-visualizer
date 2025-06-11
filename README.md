@@ -24,6 +24,7 @@ x{N-1} y{N-1} [label{N-1}]
 - The first line contains `N`, the number of nodes (nodes are assumed to be numbered 1..N).
 - The next `N-1` lines describe edges. Each line contains the source and target node numbers separated by spaces and an optional third value used as the edge label.
 - Optionally, the following `N` lines specify labels for nodes 1..N. If these lines are omitted, nodes will be labeled with their number.
+- Nodes always display their numeric id inside the circle while any provided label appears just below the node.
 
 After parsing the input, the graph will appear in the SVG area. Nodes can be dragged around and the edges will follow.
 
