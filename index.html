@@ -12,6 +12,7 @@
  textarea {width: 100%; height: 8em;}
  .node circle {fill: #69b3a2; stroke: #333; stroke-width: 1.5px;}
  .node text {pointer-events: none; font-size: 12px; text-anchor: middle; fill: #000;}
+ .node-label {fill: #000;}
  .link line {stroke: #999; stroke-width: 1.5px;}
  .link text {font-size: 10px; fill: #555;}
 </style>
@@ -68,13 +69,20 @@ function drawGraph(data) {
  link.append('line');
  link.append('text').text(d => d.label || '');
 
- const node = nodeGroup.selectAll('g').data(data.nodes).enter()
-   .append('g').attr('class', 'node').call(d3.drag()
-     .on('start', dragstarted)
-     .on('drag', dragged)
-     .on('end', dragended));
- node.append('circle').attr('r', 15);
- node.append('text').attr('dy', 4).text(d => d.label);
+  const node = nodeGroup.selectAll('g').data(data.nodes).enter()
+    .append('g').attr('class', 'node').call(d3.drag()
+      .on('start', dragstarted)
+      .on('drag', dragged)
+      .on('end', dragended));
+  node.append('circle').attr('r', 15);
+  node.append('text')
+    .attr('class', 'node-id')
+    .attr('dy', 4)
+    .text(d => d.id);
+  node.append('text')
+    .attr('class', 'node-label')
+    .attr('dy', 24)
+    .text(d => d.label);
 
  simulation.on('tick', () => {
    link.select('line')
